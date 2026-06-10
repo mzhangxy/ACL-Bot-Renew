@@ -2,8 +2,6 @@
 """
 ACLClouds MC账号 专用续期脚本 (优化版)
 - 支持 Cookie (remember_web_...) 优先登录，失效退回账密登录
-- 移除了无用的截图与录屏功能
-- 仅保留 TG 推送
 - 代理按需自动挂载
 """
 
@@ -315,7 +313,7 @@ if __name__ == "__main__":
 
     if renewed_list or failed_list:
         lines = []
-        if renewed_list: lines += ["✅ <b>续期成功</b>"] + [f"• {i}" for i in renewed_list]
-        if failed_list: lines += ["\n❌ <b>失败项目</b>"] + [f"• {i}" for i in failed_list]
-        if skipped_list: lines += ["\n⏳ <b>未到窗口</b>"] + [f"• {i}" for i in skipped_list]
+        if renewed_list: lines += ["✅ <b>ACLClouds 续期成功</b>"] + [f"• {i}" for i in renewed_list]
+        if failed_list: lines += ["\n❌ <b>ACLClouds 失败项目</b>"] + [f"• {i}" for i in failed_list]
+        if skipped_list: lines += ["\n⏳ <b>ACLClouds 未到窗口</b>"] + [f"• {i}" for i in skipped_list]
         send_tg("\n".join(lines))
