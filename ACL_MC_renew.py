@@ -22,7 +22,7 @@ MC_COOKIE    = os.environ.get("MC_COOKIE", "").strip()
 TG_BOT_TOKEN = os.environ.get("TG_BOT_TOKEN", "").strip()
 TG_CHAT_ID   = os.environ.get("TG_CHAT_ID", "").strip()
 
-RENEW_THRESHOLD_DAYS = 2 / 24   # 剩余 < 2小时 续期
+RENEW_THRESHOLD_DAYS = 48 / 24   # 剩余 < 2天 续期
 
 BASE_URL  = "https://dash.aclclouds.com"
 LOGIN_URL = f"{BASE_URL}/auth/login"
