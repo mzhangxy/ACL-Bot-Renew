@@ -5,7 +5,7 @@ on:
 
 jobs:
   renew:
-    name: MC续期
+    name: BOT续期
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -53,7 +53,7 @@ jobs:
           if [ -n "${{ secrets.V2RAY_CONFIG }}" ]; then
             export MC_PROXY="socks5://127.0.0.1:10808"
           fi
-          python ACL_MC_renew.py 2>&1 | tee renew_accountmc.log
+          python ACL_BOT_renew.py 2>&1 | tee renew_accountmc.log
 
       - name: 清理旧 runs（保留最近3个）
         if: always()
