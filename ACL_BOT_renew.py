@@ -277,15 +277,55 @@ def run():
                     skipped_list.append(f"{name} ({remaining_str})")
                     continue
 
-                # 续期逻辑
-                log("  尝试续期...")
-                renew_res = fetch_api(page, f"/api/client/servers/{identifier}/upgrade/renew", "POST")
-                if renew_res['status'] == 200:
+                # 续期逻辑 (UI 模拟点击与自研 Captcha 处理)
+                log("  尝试通过 UI 模拟点击续期...")
+                try:
+                    # 1. 定位当前项目的卡片 (通过项目名称 name)
+                    card = page.locator(f".client-card:has-text('{name}')").first
+                    
+                    # 2. 定位并点击卡片内的 Renew 按钮
+                    renew_btn = card.locator("button:has-text('Renew')").first
+                    if not renew_btn.is_visible(timeout=5000):
+                        log_warn("  ⚠️ 找不到续期按钮，可能状态未刷新或尚不能续期")
+                        failed_list.append(f"{name} (UI找不到续期按钮)")
+                        continue
+                    
+                    renew_btn.click()
+                    
+                    # 3. 等待 Anti-bot 弹窗出现
+                    log("  等待 Anti-bot 验证码弹窗...")
+                    page.wait_for_selector("text=Anti-bot confirmation", timeout=10000)
+                    time.sleep(1) # 给予弹窗动画渲染时间
+                    
+                    # 4. 点击验证码并等待通过状态
+                    CAPTCHA_SEL = "div.auth-captcha-box.verified, div.auth-captcha-inner[aria-checked='true'], :text('Verified'), :text('verified')"
+                    
+                    page.click("div.auth-captcha-inner", timeout=5000)
+                    
+                    try:
+                        page.wait_for_selector(CAPTCHA_SEL, timeout=15000)
+                        log("  captcha 验证通过 ✅")
+                    except Exception:
+                        log_warn("  ⚠️ 续期 captcha 等待超时")
+                        failed_list.append(f"{name} (验证码超时)")
+                        # 点击 Cancel 按钮关闭弹窗，确保不遮挡后续项目的点击操作
+                        try:
+                            page.locator("button:has-text('Cancel')").click(timeout=3000)
+                        except: 
+                            pass
+                        continue
+                    
+                    # 5. 核心判定：等待弹窗自动关闭且原有的 Renew 按钮消失
+                    log("  等待后端处理及页面状态刷新...")
+                    renew_btn.wait_for(state="hidden", timeout=15000)
+                    
+                    # 记录成功状态，原有 Telegram 推送逻辑会正常读取 renewed_list
                     renewed_list.append(f"{name} (续期前: {remaining_str})")
-                    log("  续期成功 ✅")
-                else:
-                    err = json.loads(renew_res['body']).get('error', renew_res['body'][:80])
-                    failed_list.append(f"{name} ({err})")
+                    log("  UI 续期流程执行完毕，续期成功 ✅")
+
+                except Exception as e:
+                    log_warn(f"  ❌ UI 续期交互异常: {e}")
+                    failed_list.append(f"{name} (UI 交互报错)")
 
         except Exception as e:
             send_tg(f"❌ <b>ACLClouds 脚本异常</b>\n\n<code>{str(e)[:200]}</code>")
