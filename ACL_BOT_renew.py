@@ -277,20 +277,24 @@ def run():
                     skipped_list.append(f"{name} ({remaining_str})")
                     continue
 
-                # 续期逻辑 (UI 模拟点击与自研 Captcha 处理)
-                log("  尝试通过 UI 模拟点击续期...")
+                # 续期逻辑 (UI 模拟点击与 Captcha 处理)
+                log("  尝试通过 UI 模拟点击续期/激活...")
                 try:
                     # 1. 定位当前项目的卡片 (通过项目名称 name)
                     card = page.locator(f".client-card:has-text('{name}')").first
                     
-                    # 2. 定位并点击卡片内的 Renew 按钮
-                    renew_btn = card.locator("button:has-text('Renew')").first
-                    if not renew_btn.is_visible(timeout=5000):
-                        log_warn("  ⚠️ 找不到续期按钮，可能状态未刷新或尚不能续期")
-                        failed_list.append(f"{name} (UI找不到续期按钮)")
+                    # 2. 定位 Renew 或 Reactivate 按钮 (使用逗号分隔，匹配任意一个)
+                    action_btn = card.locator("button:has-text('Renew'), button:has-text('Reactivate')").first
+                    
+                    if not action_btn.is_visible(timeout=5000):
+                        log_warn("  ⚠️ 找不到 Renew 或 Reactivate 按钮，可能尚不能操作")
+                        failed_list.append(f"{name} (UI找不到操作按钮)")
                         continue
                     
-                    renew_btn.click()
+                    # 记录当前点击的是什么按钮，方便日志追踪
+                    btn_text = action_btn.inner_text().strip()
+                    log(f"  发现并点击 [{btn_text}] 按钮...")
+                    action_btn.click()
                     
                     # 3. 等待 Anti-bot 弹窗出现
                     log("  等待 Anti-bot 验证码弹窗...")
@@ -306,25 +310,26 @@ def run():
                         page.wait_for_selector(CAPTCHA_SEL, timeout=15000)
                         log("  captcha 验证通过 ✅")
                     except Exception:
-                        log_warn("  ⚠️ 续期 captcha 等待超时")
+                        log_warn(f"  ⚠️ {btn_text} captcha 等待超时")
                         failed_list.append(f"{name} (验证码超时)")
-                        # 点击 Cancel 按钮关闭弹窗，确保不遮挡后续项目的点击操作
+                        # 点击 Cancel 按钮关闭弹窗，确保不遮挡后续项目的操作
                         try:
                             page.locator("button:has-text('Cancel')").click(timeout=3000)
                         except: 
                             pass
                         continue
                     
-                    # 5. 核心判定：等待弹窗自动关闭且原有的 Renew 按钮消失
+                    # 5. 核心判定：等待弹窗自动关闭且原有的操作按钮消失
                     log("  等待后端处理及页面状态刷新...")
-                    renew_btn.wait_for(state="hidden", timeout=15000)
+                    action_btn.wait_for(state="hidden", timeout=15000)
                     
-                    # 记录成功状态，原有 Telegram 推送逻辑会正常读取 renewed_list
-                    renewed_list.append(f"{name} (续期前: {remaining_str})")
-                    log("  UI 续期流程执行完毕，续期成功 ✅")
+                    # 记录成功状态并区分操作类型
+                    action_type = "重新激活" if "Reactivate" in btn_text else "续期"
+                    renewed_list.append(f"{name} ({action_type}成功, 前状态: {remaining_str})")
+                    log(f"  UI {action_type}流程执行完毕 ✅")
 
                 except Exception as e:
-                    log_warn(f"  ❌ UI 续期交互异常: {e}")
+                    log_warn(f"  ❌ UI 交互异常: {e}")
                     failed_list.append(f"{name} (UI 交互报错)")
 
         except Exception as e:
