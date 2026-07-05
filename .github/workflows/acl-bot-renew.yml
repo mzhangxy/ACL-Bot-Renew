@@ -1,13 +1,13 @@
-name: ACLClouds MC续期
+name: ACLClouds Bot Renew
 
 on:
-  schedule:
-    - cron: '5 3 * * *'  # 每天运行一次
+  #schedule:
+  #  - cron: '5 3 * * *'  # 每天运行一次
   workflow_dispatch:   # cron-job.org / 手动触发
 
 jobs:
   renew:
-    name: MC续期
+    name: Bot_renew
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -21,12 +21,12 @@ jobs:
       - name: 📥 下载私库脚本
         uses: actions/checkout@v4
         with:
-          repository: ${{ github.repository_owner }}/ACL-MC-Private
+          repository: ${{ github.repository_owner }}/ACL-Bot-Private
           token: ${{ secrets.PAT_TOKEN }}
           path: private
 
       - name: 📂 移动脚本到工作目录
-        run: mv -f private/ACL_MC_renew.py ACL_MC_renew.py
+        run: mv -f private/main.py main.py
       
       - name: 安装 Python
         uses: actions/setup-python@v5
@@ -69,7 +69,7 @@ jobs:
           if [ -n "${{ secrets.V2RAY_CONFIG }}" ]; then
             export MC_PROXY="socks5://127.0.0.1:10808"
           fi
-          python ACL_MC_renew.py 2>&1 | tee renew_accountmc.log
+          python main.py 2>&1 | tee renew_accountmc.log
 
       - name: 上传错误截图与调试数据
         if: always()  
