@@ -284,7 +284,7 @@ def run():
                     card = page.locator(f".client-card:has-text('{name}')").first
                     
                     # 2. 定位 Renew 或 Reactivate 按钮 (使用逗号分隔，匹配任意一个)
-                    action_btn = card.locator("button:has-text('Renew'), button:has-text('Reactivate')").first
+                    action_btn = card.locator("button:has-text('Renew'), button:has-text('Reactivate'), button:has-text('Renouveler'), button:has-text('Réactiver')").first
                     
                     if not action_btn.is_visible(timeout=5000):
                         log_warn("  ⚠️ 找不到 Renew 或 Reactivate 按钮，可能尚不能操作")
