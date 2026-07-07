@@ -1,4 +1,4 @@
-name: ACLClouds MC续期
+name: ACLClouds Bot Renew
 
 on:
   schedule:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   renew:
-    name: MC续期
+    name: bot-renew
     runs-on: ubuntu-latest
     permissions:
       actions: write
