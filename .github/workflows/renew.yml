@@ -84,11 +84,27 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "当前 Workflow 名称: ${{ github.workflow }}"
+          
+          # 获取 Workflow ID（更可靠的写法）
           WORKFLOW_ID=$(gh api repos/${{ github.repository }}/actions/workflows \
-            --jq '.workflows[] | select(.name == "${{ github.workflow }}") | .id')
-          gh api "repos/${{ github.repository }}/actions/workflows/${WORKFLOW_ID}/runs" \
+            --jq '.workflows[] | select(.name == "${{ github.workflow }}") | .id' \
+            | head -n1)
+      
+          if [ -z "$WORKFLOW_ID" ]; then
+            echo "❌ 未找到 Workflow ID，跳过清理"
+            exit 0
+          fi
+      
+          echo "找到 Workflow ID: $WORKFLOW_ID"
+      
+          # 删除旧的 runs（保留最近 3 个）
+          gh api "repos/${{ github.repository }}/actions/workflows/$WORKFLOW_ID/runs" \
             --paginate \
-            --jq '.workflow_runs[3:][] | .id' \
-            | while read id; do
-                gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id"
-              done
+            --jq '.workflow_runs[3:][] | .id' | while read -r id; do
+              echo "正在删除 run: $id"
+              gh api -X DELETE "repos/${{ github.repository }}/actions/runs/$id" --silent || true
+            done
+      
+          echo "✅ 清理完成"
+      
